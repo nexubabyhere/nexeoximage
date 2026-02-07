@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXEO API DASHBOARD v4.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #38bdf8;
+            --primary-dark: #0ea5e9;
+            --secondary: #8b5cf6;
+            --accent: #f59e0b;
+            --bg-dark: #020617;
+            --bg-card: rgba(15, 23, 42, 0.7);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 50% 80%, rgba(245, 158, 11, 0.03) 0%, transparent 20%);
+        }
+
+        .glass-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+        }
+
+        /* 3-Line Navigation Styling */
+        .nav-lines {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 2rem;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-line {
+            flex: 1;
+            height: 6px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .nav-line.active {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+            transform: scaleY(1.5);
+        }
+
+        .nav-label-top {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+
+        .nav-line.active .nav-label-top {
+            color: var(--primary);
+        }
+
+        .nav-menu {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 2rem;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 16px;
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .nav-item.active {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .content-section { display: none; animation: fadeIn 0.5s ease; }
+        .content-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .custom-loader {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: conic-gradient(transparent, var(--primary));
+            -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 8px), #000 0);
+            animation: spin 1.2s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .progress-bar { height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: width 0.3s ease; }
+
+        .toast {
+            position: fixed; top: 30px; right: 30px; padding: 16px 24px;
+            background: var(--bg-card); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px; transform: translateX(120%); transition: transform 0.4s ease; z-index: 1000;
+        }
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-left: 4px solid #10b981; }
+        .toast.error { border-left: 4px solid #ef4444; }
+
+        .image-display { max-height: 500px; width: auto; max-width: 100%; object-fit: contain; border-radius: 16px; border: 2px solid rgba(56, 189, 248, 0.2); }
+        
+        .nexeo-input { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 16px 20px; color: var(--text-primary); outline: none; }
+        .nexeo-input:focus { border-color: var(--primary); }
+        
+        .nexeo-btn { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-radius: 16px; padding: 16px 32px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .nexeo-btn-secondary { background: linear-gradient(135deg, var(--secondary), #7c3aed); color: white; border-radius: 16px; padding: 16px 32px; font-weight: 600; cursor: pointer; }
+        
+        .stats-card { background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 20px; }
+        
+        .tooltip .tooltip-text { visibility: hidden; position: absolute; background: #000; padding: 5px 10px; border-radius: 5px; font-size: 11px; bottom: 125%; left: 50%; transform: translateX(-50%); opacity: 0; transition: 0.3s; z-index: 10; }
+        .tooltip:hover .tooltip-text { visibility: visible; opacity: 1; }
+    </style>
+</head>
+<body onload="initializeDashboard()">
+
+    <nav class="sticky top-0 z-50 glass-panel px-6 py-4 flex justify-between items-center border-b border-white/5 mb-8">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center">
+                <i class="fas fa-bolt text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-extrabold tracking-tighter bg-gradient-to-r from-sky-400 to-purple-400 bg-clip-text text-transparent">NEXEO API</h1>
+                <p class="text-xs text-slate-500">Dashboard v4.0</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div id="status-indicator" class="flex items-center gap-2 bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-800">
+                <div class="w-2 h-2 rounded-full bg-slate-500" id="status-dot"></div>
+                <span class="text-[10px] uppercase font-bold text-slate-400" id="status-text">Connecting...</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="nav-lines">
+            <div class="nav-line active" onclick="switchSection('image-gen')">
+                <span class="nav-label-top">Generation</span>
+            </div>
+            <div class="nav-line" onclick="switchSection('ocr-reader')">
+                <span class="nav-label-top">OCR Reader</span>
+            </div>
+            <div class="nav-line" onclick="switchSection('tools')">
+                <span class="nav-label-top">Tools</span>
+            </div>
+        </div>
+
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="switchSection('image-gen')"><i class="fas fa-wand-magic-sparkles mr-2"></i>AI Generator</div>
+            <div class="nav-item" onclick="switchSection('ocr-reader')"><i class="fas fa-eye mr-2"></i>Text Reader</div>
+            <div class="nav-item" onclick="switchSection('tools')"><i class="fas fa-tools mr-2"></i>Settings</div>
+        </div>
+
+        <section id="image-gen-section" class="content-section active glass-panel p-8 rounded-[2.5rem]">
+            <div class="mb-8">
+                <h2 class="text-3xl font-extrabold mb-2">AI Image Generator</h2>
+                <p class="text-slate-400 text-sm">Create masterpieces in 35 seconds.</p>
+            </div>
+            <div class="space-y-6">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <input id="promptInput" type="text" placeholder="Describe your image..." class="nexeo-input flex-1">
+                    <button onclick="handleImageGen()" id="genBtn" class="nexeo-btn">Generate</button>
+                </div>
+
+                <div id="gen-loader" class="hidden text-center py-10">
+                    <div class="custom-loader mx-auto mb-4"></div>
+                    <p id="progress-text">0%</p>
+                    <div class="progress-bar max-w-md mx-auto mt-4"><div id="progress-bar" class="progress-fill"></div></div>
+                    <p class="mt-2 text-sm text-slate-500">Wait <span id="timer">35</span>s...</p>
+                </div>
+
+                <div id="gen-result-container" class="hidden">
+                    <img id="genResultImg" class="image-display mx-auto mb-6" src="">
+                    <button onclick="downloadImage()" class="nexeo-btn w-full bg-green-600">Download Image</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="ocr-reader-section" class="content-section glass-panel p-8 rounded-[2.5rem]">
+            <h2 class="text-3xl font-extrabold mb-6">OCR Text Reader</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="glass-panel p-6 rounded-3xl">
+                    <input id="ocrLinkInput" type="text" placeholder="Paste Image URL..." class="nexeo-input w-full mb-4">
+                    <button onclick="handleOCR()" class="nexeo-btn-secondary w-full">Extract Text</button>
+                </div>
+                <div class="glass-panel p-6 rounded-3xl text-center border-dashed border-2 border-slate-700" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-cloud-upload-alt text-3xl mb-2 text-slate-500"></i>
+                    <p>Click to Upload Image</p>
+                    <input type="file" id="fileInput" class="hidden" onchange="handleFileUpload(this)">
+                </div>
+            </div>
+            <div id="ocr-result-box" class="hidden mt-8">
+                <div class="bg-slate-900/50 p-6 rounded-2xl font-mono text-sm border border-slate-800 whitespace-pre-wrap" id="ocrTextOutput"></div>
+                <div class="flex gap-4 mt-4">
+                    <button onclick="copyOcrText()" class="nexeo-btn py-2">Copy</button>
+                    <button onclick="speakText()" class="nexeo-btn-secondary py-2">Speak</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="tools-section" class="content-section glass-panel p-8 rounded-[2.5rem]">
+            <h2 class="text-3xl font-extrabold mb-6">Tools & Stats</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="stats-card">
+                    <p class="text-slate-400 text-xs">Images Created</p>
+                    <h3 class="text-2xl font-bold" id="stats-image-count">0</h3>
+                </div>
+                <div class="stats-card">
+                    <p class="text-slate-400 text-xs">OCR Scans</p>
+                    <h3 class="text-2xl font-bold" id="stats-ocr-count">0</h3>
+                </div>
+                <div class="stats-card">
+                    <p class="text-slate-400 text-xs">API Status</p>
+                    <h3 class="text-2xl font-bold text-green-400">Stable</h3>
+                </div>
+            </div>
+            <button onclick="clearAllData()" class="mt-8 text-red-400 text-sm underline">Clear All Session Data</button>
+        </section>
+    </div>
+
+    <div id="toast-container" class="fixed top-8 right-8 z-[1000]"></div>
+
+    <script>
+        const BASE_URL = "https://nexeoimage.vercel.app";
+        let imageCount = 0, ocrCount = 0;
+
+        function switchSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.querySelectorAll('.nav-line').forEach(l => l.classList.remove('active'));
+
+            document.getElementById(sectionId + '-section').classList.add('active');
+            
+            // Sync both nav menus
+            const idx = sectionId === 'image-gen' ? 0 : sectionId === 'ocr-reader' ? 1 : 2;
+            document.querySelectorAll('.nav-item')[idx].classList.add('active');
+            document.querySelectorAll('.nav-line')[idx].classList.add('active');
+        }
+
+        async function initializeDashboard() {
+            try {
+                const res = await fetch(`${BASE_URL}/apiv1/health`);
+                if(res.ok) {
+                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-green-500";
+                    document.getElementById('status-text').innerText = "Online";
+                }
+            } catch(e) {
+                document.getElementById('status-text').innerText = "Offline";
+            }
+        }
+
+        async function handleImageGen() {
+            const prompt = document.getElementById('promptInput').value;
+            if(!prompt) return showToast("Enter a prompt", "error");
+
+            const loader = document.getElementById('gen-loader');
+            const result = document.getElementById('gen-result-container');
+            loader.classList.remove('hidden');
+            result.classList.add('hidden');
+
+            let time = 35;
+            const timer = setInterval(() => {
+                time--;
+                document.getElementById('timer').innerText = time;
+                document.getElementById('progress-bar').style.width = (35-time)*2.8 + "%";
+                document.getElementById('progress-text').innerText = Math.floor((35-time)*2.8) + "%";
+                if(time <= 0) clearInterval(timer);
+            }, 1000);
+
+            try {
+                const res = await fetch(`${BASE_URL}/apiv1/image?text=${encodeURIComponent(prompt)}`);
+                const data = await res.json();
+                if(data.success) {
+                    document.getElementById('genResultImg').src = data.images[0];
+                    loader.classList.add('hidden');
+                    result.classList.remove('hidden');
+                    imageCount++;
+                    document.getElementById('stats-image-count').innerText = imageCount;
+                    showToast("Generated!", "success");
+                }
+            } catch(e) {
+                loader.classList.add('hidden');
+                showToast("Error generating", "error");
+            }
+            clearInterval(timer);
+        }
+
+        async function handleOCR() {
+            const url = document.getElementById('ocrLinkInput').value;
+            if(!url) return;
+            performOCR(url);
+        }
+
+        async function performOCR(source) {
+            const out = document.getElementById('ocrTextOutput');
+            const box = document.getElementById('ocr-result-box');
+            out.innerText = "Scanning...";
+            box.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`${BASE_URL}/apiv1/text?image=${encodeURIComponent(source)}`);
+                const data = await res.json();
+                if(data.success) {
+                    out.innerText = data.text;
+                    ocrCount++;
+                    document.getElementById('stats-ocr-count').innerText = ocrCount;
+                }
+            } catch(e) { out.innerText = "Failed to read text."; }
+        }
+
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64 = e.target.result.split(',')[1];
+                performOCR(base64);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function copyOcrText() {
+            navigator.clipboard.writeText(document.getElementById('ocrTextOutput').innerText);
+            showToast("Copied!", "success");
+        }
+
+        function speakText() {
+            const msg = new SpeechSynthesisUtterance(document.getElementById('ocrTextOutput').innerText);
+            window.speechSynthesis.speak(msg);
+        }
+
+        function showToast(msg, type) {
+            const t = document.createElement('div');
+            t.className = `toast show ${type} glass-panel`;
+            t.innerText = msg;
+            document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.href = document.getElementById('genResultImg').src;
+            link.download = "nexeo_ai.jpg";
+            link.click();
+        }
+
+        function clearAllData() {
+            if(confirm("Reset all?")) location.reload();
+        }
+    </script>
+</body>
+</html>
